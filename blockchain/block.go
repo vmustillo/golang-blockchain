@@ -1,9 +1,10 @@
 package blockchain
 
-// BlockChain is a structure that will hold all blocks in an array
-type BlockChain struct {
-	Blocks []*Block
-}
+import (
+	"bytes"
+	"encoding/gob"
+	"log"
+)
 
 // Block is a structure that each block in the chain will be modeled after
 // contains a hash, data, and hash of the previous block
@@ -32,19 +33,37 @@ func CreateBlock(data string, prevHash []byte) *Block {
 	return block
 }
 
-// AddBlock takes a string of data and creates a block and adds it to the blockchain
-func (chain *BlockChain) AddBlock(data string) {
-	prevBlock := chain.Blocks[len(chain.Blocks)-1]
-	new := CreateBlock(data, prevBlock.Hash)
-	chain.Blocks = append(chain.Blocks, new)
-}
-
 // Genesis creates the first block in the chain (Genesis Block)
 func Genesis() *Block {
 	return CreateBlock("Genesis", []byte{})
 }
 
-//InitBlockChain creates the blockchain with the Genesis block inside
-func InitBlockChain() *BlockChain {
-	return &BlockChain{[]*Block{Genesis()}}
+// Serialize calls an encoding package "gob" to encode a block into slices of bytes
+// This is because BadgerDB is a key-value store database that only allows arrays of bytes to be stored
+func (b *Block) Serialize() []byte {
+	var res bytes.Buffer
+	encoder := gob.NewEncoder(&res)
+
+	err := encoder.Encode(b)
+
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return res.Bytes()
+}
+
+// Deserialize allows a slice of bytes to be decoded using the same "gob" package that was used to encode, to return a block from a slice of bytes.
+// This will be used to return the slices of bytes in the database back into blocks
+func Deserialize(data []byte) *Block {
+	var block Block
+	decoder := gob.NewDecoder(bytes.NewReader(data))
+
+	err := decoder.Decode(&block)
+
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return &block
 }
