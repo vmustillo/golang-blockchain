@@ -70,13 +70,12 @@ func InitBlockChain() *BlockChain {
 			lastHash = genesis.Hash
 
 			return err
-		} else {
-			item, err := txn.Get([]byte("lh"))
-			Handle(err)
-			lastHash, err = item.ValueCopy(nil)
-
-			return err
 		}
+		item, err := txn.Get([]byte("lh"))
+		Handle(err)
+		lastHash, err = item.ValueCopy(nil)
+
+		return err
 	})
 
 	Handle(err)
