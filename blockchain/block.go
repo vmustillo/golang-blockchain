@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/gob"
 	"log"
 )
@@ -9,18 +10,18 @@ import (
 // Block is a structure that each block in the chain will be modeled after
 // contains a hash, data, and hash of the previous block
 type Block struct {
-	Hash     []byte
-	Data     []byte
-	PrevHash []byte
-	Nonce    int
+	Hash         []byte
+	Transactions []*Transaction
+	PrevHash     []byte
+	Nonce        int
 }
 
 // CreateBlock creates a block using the data from the parameters
 // These parameters include a string of data and the hash of the previous block
-func CreateBlock(data string, prevHash []byte) *Block {
+func CreateBlock(txs []*Transaction, prevHash []byte) *Block {
 	block := &Block{
 		[]byte{},
-		[]byte(data),
+		txs,
 		prevHash,
 		0,
 	}
@@ -34,8 +35,21 @@ func CreateBlock(data string, prevHash []byte) *Block {
 }
 
 // Genesis creates the first block in the chain (Genesis Block)
-func Genesis() *Block {
-	return CreateBlock("Genesis", []byte{})
+func Genesis(coinbase *Transaction) *Block {
+	return CreateBlock([]*Transaction{coinbase}, []byte{})
+}
+
+// HashTransactions hashes all the IDs of all the transactions in a block
+func (b *Block) HashTransactions() []byte {
+	var txHashes [][]byte
+	var txHash [32]byte
+
+	for _, tx := range b.Transactions {
+		txHashes = append(txHashes, tx.ID)
+	}
+	txHash = sha256.Sum256(bytes.Join(txHashes, []byte{}))
+
+	return txHash[:]
 }
 
 // Serialize calls an encoding package "gob" to encode a block into slices of bytes
